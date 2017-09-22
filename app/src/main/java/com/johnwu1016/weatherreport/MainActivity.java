@@ -39,8 +39,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Response response) throws IOException {
                 try {
-                    if (response.isSuccessful())
-                        Log.v(TAG, response.body().string());
+                    Log.v(TAG, response.body().string());
+
+                    if (response.isSuccessful()) {
+                    } else {
+                        alertUserAboutError();
+                    }
                 } catch (IOException e) {
                     Log.e(TAG, "Exception caught: ", e);
                 }
@@ -48,5 +52,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+    }
+
+    private void alertUserAboutError() {
+        AlertDialogFragment dialog = new AlertDialogFragment();
+        dialog.show(getFragmentManager(), "error_dialog");
     }
 }
