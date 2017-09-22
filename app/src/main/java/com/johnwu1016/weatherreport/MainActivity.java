@@ -1,8 +1,12 @@
 package com.johnwu1016.weatherreport;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
@@ -27,31 +31,47 @@ public class MainActivity extends AppCompatActivity {
         String forecastUrl = "https://api.darksky.net/forecast/" + apiKey +
                 "/" + latitude + "," + longitude;
 
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder().url(forecastUrl).build();
-        Call call = client.newCall(request);
-        call.enqueue(new Callback() {
-            @Override
-            public void onFailure(Request request, IOException e) {
+        if (isNetworkAvailable()) {
+//            Log.v(TAG, "1st");
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder().url(forecastUrl).build();
+            Call call = client.newCall(request);
+            call.enqueue(new Callback() {
+                @Override
+                public void onFailure(Request request, IOException e) {
 
-            }
-
-            @Override
-            public void onResponse(Response response) throws IOException {
-                try {
-                    Log.v(TAG, response.body().string());
-
-                    if (response.isSuccessful()) {
-                    } else {
-                        alertUserAboutError();
-                    }
-                } catch (IOException e) {
-                    Log.e(TAG, "Exception caught: ", e);
                 }
-            }
-        });
 
+                @Override
+                public void onResponse(Response response) throws IOException {
+                    try {
+                        Log.v(TAG, response.body().string());
 
+                        if (response.isSuccessful()) {
+                        } else {
+                            alertUserAboutError();
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Exception caught: ", e);
+                    }
+                }
+            });
+        }
+        else {
+            Toast.makeText(this, R.string.network_unavailable_message, Toast.LENGTH_LONG).show();
+        }
+        Log.v(TAG, "Main Activity is running.");
+
+    }
+
+    private boolean isNetworkAvailable() {
+//        Log.v(TAG, "2nd");
+        ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+        boolean isAvailable = false;
+        if (networkInfo != null && networkInfo.isAvailable())
+            isAvailable = true;
+        return isAvailable;
     }
 
     private void alertUserAboutError() {
