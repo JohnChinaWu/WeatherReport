@@ -21,6 +21,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,11 +41,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        ButterKnife.inject(this);
 
         String apiKey = "e17e17602b10d445c854bc3d1f9a4780";
-        double latitude = 37.8267;
-        double longitude = -122.4233;
+        double latitude = 34.0201613;
+        double longitude = -118.6919178;
         String forecastUrl = "https://api.darksky.net/forecast/" + apiKey +
                 "/" + latitude + "," + longitude;
 
@@ -67,6 +68,12 @@ public class MainActivity extends AppCompatActivity {
 
                         if (response.isSuccessful()) {
                             currentWeather = getCurrentDetails(jsonData);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    updateDisplay();
+                                }
+                            });
                         } else {
                             alertUserAboutError();
                         }
@@ -81,6 +88,14 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.v(TAG, "Main Activity is running.");
 
+    }
+
+    private void updateDisplay() {
+        mTemperatureLabel.setText(currentWeather.getTemperature() + "");
+        mTimeLabel.setText("At " + currentWeather.getFormattedTime() + " it will be");
+        mHumidityValue.setText(currentWeather.getHumidity() + "");
+        mPrecipValue.setText(currentWeather.getPrecipChance() + "%");
+        mSummaryLabel.setText(currentWeather.getSummary());
     }
 
     private CurrentWeather getCurrentDetails(String jsonData) throws JSONException {
