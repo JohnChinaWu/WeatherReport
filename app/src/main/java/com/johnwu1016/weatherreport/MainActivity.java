@@ -1,12 +1,15 @@
 package com.johnwu1016.weatherreport;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,11 +34,20 @@ public class MainActivity extends AppCompatActivity {
 
     @InjectView(R.id.timeLabel)
     TextView mTimeLabel;
-    @InjectView(R.id.temperatureLabel) TextView mTemperatureLabel;
-    @InjectView(R.id.humidityValue) TextView mHumidityValue;
-    @InjectView(R.id.precipValue) TextView mPrecipValue;
-    @InjectView(R.id.summaryLabel) TextView mSummaryLabel;
-    @InjectView(R.id.iconImageView) ImageView mIconImageView;
+    @InjectView(R.id.temperatureLabel)
+    TextView temperatureLabel;
+    @InjectView(R.id.humidityValue)
+    TextView humidityValue;
+    @InjectView(R.id.precipValue)
+    TextView precipValue;
+    @InjectView(R.id.summaryLabel)
+    TextView summaryLabel;
+    @InjectView(R.id.iconImageView)
+    ImageView iconImageView;
+    @InjectView(R.id.refreshImageView)
+    ImageView refresh;
+    @InjectView(R.id.progressBar)
+    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,25 +55,52 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
 
+        progressBar.setVisibility(View.INVISIBLE);
+
+        refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                forecast(34.0201613, -118.6919178);
+            }
+        });
+
+        forecast(34.0201613, -118.6919178);
+        Log.v(TAG, "Main Activity is running.");
+
+    }
+
+    private void forecast(double latitude, double longitude) {
         String apiKey = "e17e17602b10d445c854bc3d1f9a4780";
-        double latitude = 34.0201613;
-        double longitude = -118.6919178;
         String forecastUrl = "https://api.darksky.net/forecast/" + apiKey +
                 "/" + latitude + "," + longitude;
 
         if (isNetworkAvailable()) {
 //            Log.v(TAG, "1st");
+            toggleRefresh();
+
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder().url(forecastUrl).build();
             Call call = client.newCall(request);
             call.enqueue(new Callback() {
                 @Override
                 public void onFailure(Request request, IOException e) {
-
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            toggleRefresh();
+                        }
+                    });
+                    alertUserAboutError();
                 }
 
                 @Override
                 public void onResponse(Response response) throws IOException {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            toggleRefresh();
+                        }
+                    });
                     try {
                         String jsonData = response.body().string();
                         Log.v(TAG, jsonData);
@@ -82,20 +121,34 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             });
-        }
-        else {
+        } else {
             Toast.makeText(this, R.string.network_unavailable_message, Toast.LENGTH_LONG).show();
         }
-        Log.v(TAG, "Main Activity is running.");
+    }
 
+    private void toggleRefresh() {
+        if (progressBar.getVisibility() == View.VISIBLE)
+            progressBar.setVisibility(View.INVISIBLE);
+        else
+            progressBar.setVisibility(View.VISIBLE);
+
+        if (refresh.getVisibility() == View.VISIBLE)
+            refresh.setVisibility(View.INVISIBLE);
+        else
+            refresh.setVisibility(View.VISIBLE);
     }
 
     private void updateDisplay() {
-        mTemperatureLabel.setText(currentWeather.getTemperature() + "");
+        temperatureLabel.setText(currentWeather.getTemperature() + "");
         mTimeLabel.setText("At " + currentWeather.getFormattedTime() + " it will be");
-        mHumidityValue.setText(currentWeather.getHumidity() + "");
-        mPrecipValue.setText(currentWeather.getPrecipChance() + "%");
-        mSummaryLabel.setText(currentWeather.getSummary());
+        humidityValue.setText(currentWeather.getHumidity() + "");
+        precipValue.setText(currentWeather.getPrecipChance() + "%");
+        summaryLabel.setText(currentWeather.getSummary());
+
+        Drawable drawable = getResources().getDrawable(currentWeather.getIconId());
+//        Drawable drawable = ContextCompat.getDrawable(this, R.drawable.clear_day);
+        Log.d(TAG, currentWeather.getIconId() + "icon");
+        iconImageView.setImageDrawable(drawable);
     }
 
     private CurrentWeather getCurrentDetails(String jsonData) throws JSONException {
